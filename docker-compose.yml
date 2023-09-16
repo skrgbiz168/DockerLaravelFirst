@@ -1,0 +1,49 @@
+version: '3'
+services:
+  reserve-nginx:
+    container_name: "reserve-nginx"
+    build:
+      context: ./docker/nginx
+    depends_on:
+      - reserve-app
+    ports:
+      - 80:80
+    volumes:
+      - ./:/src
+
+  reserve-app:
+    container_name: "reserve-app"
+    build:
+      context: ./docker/php
+    depends_on:
+      - reserve-mysql
+    ports:
+      - 5173:5173
+    volumes:
+      - ./:/src
+      - /src/node_modules
+      - /src/vendor
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+    deploy:
+      resources:
+        reservations:
+          cpus: '2'
+          memory: '4g'
+
+  reserve-mysql:
+    image: mysql:8.0.33
+    command: --max_allowed_packet=32505856
+    container_name: "reserve-mysql"
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=reserve
+    ports:
+      - 3306:3306
+
+  reserve-redis:
+    image: redis:alpine
+    container_name: "reserve-redis"
+    ports:
+      - 16379:6379
